@@ -1,0 +1,15 @@
+services:
+  app:
+    image: ghcr.io/vidalee/kasoku:latest
+    environment:
+      DATABASE_PATH: /var/lib/kasoku/kasoku.db
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist the SQLite database outside the container image
+      - kasoku_data:/var/lib/kasoku
+
+volumes:
+  kasoku_data:
