@@ -1,5 +1,7 @@
 # 加速 Kasoku
 
+[![Build](https://github.com/Vidalee/kasoku/actions/workflows/build.yml/badge.svg)](https://github.com/Vidalee/kasoku/actions/workflows/build.yml)
+
 **An experiment to see whether a tool designed around how I feel I learn best can actually be effective, and how useful a fully “vibe-coded” app can be.**
 
 Personal Japanese learning PWA. Vocabulary management, spaced repetition (FSRS), sentence reading practice, offline-first with multi-device sync.
