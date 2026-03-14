@@ -7,7 +7,7 @@ Personal Japanese learning PWA. Vocabulary management, spaced repetition (FSRS),
 ## Prerequisites
 
 - [Bun](https://bun.sh) — `curl -fsSL https://bun.sh/install | bash`
-- That's it — no Postgres, no Docker needed for local dev
+- That's it — no Docker needed for local dev
 
 ## First-time setup
 
@@ -42,7 +42,7 @@ bun run db:push
 bun dev
 ```
 
-That's it — no Postgres to set up. Each machine gets its own `kasoku.db` and they sync through the server.
+That's it. Each machine gets its own `kasoku.db` and they sync through the server.
 
 ## Commands
 
