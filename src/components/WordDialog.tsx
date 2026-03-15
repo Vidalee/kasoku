@@ -108,7 +108,7 @@ export function WordDialog({ open, word, decks, onClose, onSaved, prefill }: Wor
   const canSave = form.kanji && form.furigana && form.meaning;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         {word ? "Edit word" : "Add word"}
         <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>

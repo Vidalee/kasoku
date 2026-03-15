@@ -167,7 +167,7 @@ function WordDetailDialog({ word, onClose, onEdit }: { word: Word | null; onClos
   }, [word]);
 
   return (
-    <Dialog open={!!word} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={!!word} onClose={onClose} maxWidth="sm" fullWidth disableScrollLock>
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Stack direction="row" alignItems="baseline" gap={1.5}>
           <Typography variant="h5" fontWeight={700} lang="ja">{word?.kanji}</Typography>
