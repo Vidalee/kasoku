@@ -9,6 +9,12 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG DATABASE_PATH=/tmp/kasoku.db
+ARG AUTH_PASSWORD_HASH
+ARG JWT_SECRET
+ENV DATABASE_PATH=$DATABASE_PATH \
+    AUTH_PASSWORD_HASH=$AUTH_PASSWORD_HASH \
+    JWT_SECRET=$JWT_SECRET
 RUN bun run build
 
 FROM base AS runner

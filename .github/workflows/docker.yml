@@ -1,0 +1,34 @@
+name: Docker
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/vidalee/kasoku:${{ github.ref_name }}
+          build-args: |
+            DATABASE_PATH=/tmp/kasoku.db
+            AUTH_PASSWORD_HASH=${{ secrets.AUTH_PASSWORD_HASH }}
+            JWT_SECRET=placeholder-secret-for-build
