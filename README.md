@@ -1,6 +1,7 @@
 # 加速 Kasoku
 
 [![Build](https://github.com/Vidalee/kasoku/actions/workflows/build.yml/badge.svg)](https://github.com/Vidalee/kasoku/actions/workflows/build.yml)
+[![Deployed](https://img.shields.io/github/v/tag/Vidalee/kasoku?label=deployed&color=blue)](https://github.com/Vidalee/kasoku/releases)
 
 **An experiment to see whether a tool designed around how I feel I learn best can actually be effective, and how useful a fully “vibe-coded” app can be.**
 
