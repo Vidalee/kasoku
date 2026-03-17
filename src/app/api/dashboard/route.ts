@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, words, reviewLogs, srsCards } from "@/db";
-import { sql, lte, gte, eq, or } from "drizzle-orm";
+import { sql, lte, gte, eq, or, and } from "drizzle-orm";
 
 export async function GET() {
   const now = new Date();
@@ -10,15 +10,15 @@ export async function GET() {
   const [dueRes, learningRes, newRes, totalRes, todayRes, streakRes] = await Promise.all([
     // Due review cards (state=2, due now)
     db.select({ count: sql<number>`cast(count(*) as integer)` }).from(srsCards)
-      .where(sql`${srsCards.state} = 2 and ${srsCards.dueDate} <= ${now}`),
+      .where(and(eq(srsCards.state, 2), lte(srsCards.dueDate, now))),
     // Learning/relearning cards due now (state=1 or 3)
     db.select({ count: sql<number>`cast(count(*) as integer)` }).from(srsCards)
-      .where(sql`(${srsCards.state} = 1 or ${srsCards.state} = 3) and ${srsCards.dueDate} <= ${now}`),
+      .where(and(or(eq(srsCards.state, 1), eq(srsCards.state, 3)), lte(srsCards.dueDate, now))),
     // New cards available (state=0, direction=0)
     db.select({ count: sql<number>`cast(count(*) as integer)` }).from(srsCards)
       .where(sql`${srsCards.state} = 0 and ${srsCards.direction} = 0`),
     db.select({ count: sql<number>`cast(count(distinct ${words.id}) as integer)` }).from(words),
-    db.select({ count: sql<number>`cast(count(*) as integer)` }).from(reviewLogs).where(gte(reviewLogs.reviewedAt, todayStart)),
+    db.select({ count: sql<number>`cast(count(distinct ${reviewLogs.wordId}) as integer)` }).from(reviewLogs).where(gte(reviewLogs.reviewedAt, todayStart)),
     db
       .select({ date: sql<string>`strftime('%Y-%m-%d', datetime(${reviewLogs.reviewedAt}, 'unixepoch'))` })
       .from(reviewLogs)

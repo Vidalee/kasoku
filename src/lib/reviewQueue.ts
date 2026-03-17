@@ -111,8 +111,8 @@ export async function buildReviewQueue(deckId: string | null): Promise<ReviewIte
   // Review: only include if due now
   const priority = allCards.filter((c) => c.state === 1 || c.state === 3);
   const review   = allCards.filter((c) => c.state === 2 && c.dueDate <= now);
-  const cards    = [...priority, ...review];
-  const ordered  = [...priority, ...review];
+  // Sort dir-0 (recognition) before dir-1 (production) within each group
+  const ordered  = [...priority, ...review].sort((a, b) => a.direction - b.direction);
 
   const wordIds = [...new Set(ordered.map((c) => c.wordId))];
   const wordRows = await localDb.words.bulkGet(wordIds);

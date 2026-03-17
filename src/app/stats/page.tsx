@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import {
   Box, Typography, Card, CardContent, Stack, CircularProgress,
-  Chip, useTheme,
+  Chip, useTheme, Select, MenuItem, FormControl, InputLabel,
 } from "@mui/material";
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
@@ -26,18 +26,34 @@ interface StatsData {
   wordsOverTime: { date: string; count: number }[];
 }
 
+interface VocabHealth {
+  new: number;
+  learning: number;
+  young: number;
+  mature: number;
+}
+
 const JLPT_COLORS: Record<string, string> = {
   "5": "#4CAF50", "4": "#8BC34A", "3": "#FFC107", "2": "#FF9800", "1": "#F44336", "null": "#9E9E9E",
 };
 
 export default function StatsPage() {
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [health, setHealth] = useState<VocabHealth | null>(null);
+  const [decks, setDecks] = useState<{ id: string; name: string }[]>([]);
+  const [healthDeck, setHealthDeck] = useState<string>("");
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
 
   useEffect(() => {
     fetch("/api/stats").then((r) => r.json()).then(setStats);
+    fetch("/api/decks").then((r) => r.json()).then((d) => setDecks(d.decks ?? []));
   }, []);
+
+  useEffect(() => {
+    const url = healthDeck ? `/api/stats/vocab-health?deckId=${healthDeck}` : "/api/stats/vocab-health";
+    fetch(url).then((r) => r.json()).then(setHealth);
+  }, [healthDeck]);
 
   if (!stats) return <Box sx={{ display: "flex", justifyContent: "center", pt: 8 }}><CircularProgress /></Box>;
 
@@ -173,7 +189,7 @@ export default function StatsPage() {
       </Box>
 
       {/* Daily reviews sparkline */}
-      <Card variant="outlined">
+      <Card variant="outlined" sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="subtitle1" fontWeight={600} mb={2}>Daily reviews (last 30 days)</Typography>
           {stats.reviewsByDay.length > 0 ? (
@@ -192,6 +208,59 @@ export default function StatsPage() {
             </ResponsiveContainer>
           ) : (
             <Typography color="text.secondary" variant="body2">No reviews yet — start reviewing to see data here!</Typography>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Vocabulary health */}
+      <Card variant="outlined">
+        <CardContent>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2} flexWrap="wrap" gap={1}>
+            <Typography variant="subtitle1" fontWeight={600}>Vocabulary health</Typography>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <InputLabel>Deck</InputLabel>
+              <Select value={healthDeck} label="Deck" onChange={(e) => setHealthDeck(e.target.value as string)}>
+                <MenuItem value="">All decks</MenuItem>
+                {decks.map((d) => <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+          </Stack>
+          {health ? (
+            (() => {
+              const total = health.new + health.learning + health.young + health.mature;
+              if (total === 0) return <Typography color="text.secondary" variant="body2">No words yet.</Typography>;
+              const BUCKETS = [
+                { key: "new" as const, label: "New", color: "#9E9E9E" },
+                { key: "learning" as const, label: "Learning", color: theme.palette.error.main },
+                { key: "young" as const, label: "Young", color: theme.palette.info.main },
+                { key: "mature" as const, label: "Mature", color: theme.palette.success.main },
+              ];
+              return (
+                <Box>
+                  <Box sx={{ display: "flex", height: 28, borderRadius: 1, overflow: "hidden", mb: 1.5 }}>
+                    {BUCKETS.map(({ key, color }) =>
+                      health[key] > 0 ? (
+                        <Box key={key} sx={{ flex: health[key] / total, bgcolor: color, transition: "flex 0.3s" }} />
+                      ) : null
+                    )}
+                  </Box>
+                  <Stack direction="row" gap={2} flexWrap="wrap">
+                    {BUCKETS.map(({ key, label, color }) => (
+                      <Stack key={key} direction="row" alignItems="center" gap={0.5}>
+                        <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: color }} />
+                        <Typography variant="caption" color="text.secondary">{label}</Typography>
+                        <Typography variant="caption" fontWeight={700}>{health[key]}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          ({total > 0 ? Math.round((health[key] / total) * 100) : 0}%)
+                        </Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </Box>
+              );
+            })()
+          ) : (
+            <CircularProgress size={20} />
           )}
         </CardContent>
       </Card>

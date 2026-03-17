@@ -18,6 +18,7 @@ export async function GET() {
     retentionRes,
     wordsOverTimeRes,
     streakRes,
+    todayDistinctRes,
   ] = await Promise.all([
     // Total words
     db.select({ count: sql<number>`cast(count(*) as integer)` }).from(words),
@@ -67,6 +68,10 @@ export async function GET() {
       .from(reviewLogs)
       .groupBy(sql`strftime('%Y-%m-%d', datetime(${reviewLogs.reviewedAt}, 'unixepoch'))`)
       .orderBy(sql`strftime('%Y-%m-%d', datetime(${reviewLogs.reviewedAt}, 'unixepoch')) desc`),
+
+    // Today's distinct words reviewed
+    db.select({ count: sql<number>`cast(count(distinct ${reviewLogs.wordId}) as integer)` })
+      .from(reviewLogs).where(gte(reviewLogs.reviewedAt, todayStart)),
   ]);
 
   const streak = calcStreak(streakRes.map((r) => r.date));
@@ -90,7 +95,7 @@ export async function GET() {
     wordsOverTime: wordsOverTimeRes,
     streak,
     forecast,
-    todayReviews: reviewsByDayRes.find((r) => r.date === todayStart.toISOString().slice(0, 10))?.count ?? 0,
+    todayReviews: todayDistinctRes[0]?.count ?? 0,
   });
 }
 
