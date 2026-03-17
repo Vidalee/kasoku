@@ -22,6 +22,7 @@ export const decks = sqliteTable("decks", {
   id: id(),
   name: text("name").notNull(),
   color: text("color").notNull().default("#6750A4"),
+  dailyNewCardLimit: integer("daily_new_card_limit"),
   createdAt: now(),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()

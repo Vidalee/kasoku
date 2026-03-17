@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as wanakana from "wanakana";
 import {
   Box, Typography, Button, TextField, Dialog, DialogTitle, DialogContent,
   DialogActions, IconButton, Chip, MenuItem, Select, InputLabel, FormControl,
@@ -50,6 +51,14 @@ export function WordDialog({ open, word, decks, onClose, onSaved, prefill }: Wor
   const [form, setForm] = useState({ kanji: "", furigana: "", meaning: "", jlptLevel: "", tags: "" });
   const [selectedDeckIds, setSelectedDeckIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const furiganaRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const el = furiganaRef.current;
+    if (!el) return;
+    wanakana.bind(el, { IMEMode: true });
+    return () => wanakana.unbind(el);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,7 +99,9 @@ export function WordDialog({ open, word, decks, onClose, onSaved, prefill }: Wor
   async function handleSave() {
     setSaving(true);
     const body = {
-      kanji: form.kanji, furigana: form.furigana, meaning: form.meaning,
+      kanji: form.kanji,
+      furigana: furiganaRef.current?.value ?? form.furigana,
+      meaning: form.meaning,
       jlptLevel: form.jlptLevel ? parseInt(form.jlptLevel) : null,
       tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
       deckIds: selectedDeckIds,
@@ -153,7 +164,7 @@ export function WordDialog({ open, word, decks, onClose, onSaved, prefill }: Wor
           <Stack gap={2}>
             <Stack direction="row" gap={2}>
               <TextField label="Kanji / Word" value={form.kanji} onChange={(e) => setForm((f) => ({ ...f, kanji: e.target.value }))} fullWidth inputProps={{ lang: "ja" }} autoFocus={!word} />
-              <TextField label="Furigana" value={form.furigana} onChange={(e) => setForm((f) => ({ ...f, furigana: e.target.value }))} fullWidth inputProps={{ lang: "ja" }} />
+              <TextField label="Furigana" value={form.furigana} onChange={(e) => setForm((f) => ({ ...f, furigana: e.target.value }))} fullWidth inputProps={{ lang: "ja" }} inputRef={furiganaRef} />
             </Stack>
             <TextField label="Meaning" value={form.meaning} onChange={(e) => setForm((f) => ({ ...f, meaning: e.target.value }))} fullWidth multiline rows={2} />
             <Stack direction="row" gap={2}>

@@ -1,13 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography, Button, Card, CardContent, Stack, CircularProgress, Chip, LinearProgress } from "@mui/material";
+import { Box, Typography, Button, Card, CardContent, Stack, CircularProgress, Chip } from "@mui/material";
 import StyleIcon from "@mui/icons-material/Style";
+import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
-interface DashData { dueCount: number; totalWords: number; todayReviews: number; streak: number; }
+interface DashData {
+  dueCount: number;
+  dueReview: number;
+  learningDue: number;
+  newAvailable: number;
+  totalWords: number;
+  todayReviews: number;
+  streak: number;
+}
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
@@ -25,19 +34,41 @@ export default function DashboardPage() {
     <Box sx={{ maxWidth: 640, mx: "auto" }}>
       <Typography variant="h4" fontWeight={700} mb={0.5}>おはよう 👋</Typography>
       <Typography color="text.secondary" mb={4}>
-        {allDone ? "All caught up for today!" : `You have ${data.dueCount} card${data.dueCount !== 1 ? "s" : ""} to review.`}
+        {allDone && data.newAvailable === 0
+          ? "All caught up for today!"
+          : allDone
+          ? "Reviews done — ready to learn new words?"
+          : `You have ${data.dueCount} card${data.dueCount !== 1 ? "s" : ""} to review.`}
       </Typography>
 
-      {/* CTA */}
-      {!allDone ? (
-        <Button variant="contained" size="large" startIcon={<StyleIcon />} onClick={() => router.push("/review")} sx={{ mb: 4 }}>
-          Start review ({data.dueCount} due)
-        </Button>
-      ) : (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 4, color: "success.main" }}>
-          <CheckCircleIcon />
-          <Typography fontWeight={600}>Reviews done for today — come back tomorrow!</Typography>
-        </Box>
+      {/* CTAs */}
+      <Stack direction="row" gap={2} mb={4} flexWrap="wrap">
+        {!allDone && (
+          <Button variant="contained" size="large" startIcon={<StyleIcon />}
+            onClick={() => router.push("/review")}>
+            Review ({data.dueCount} due)
+          </Button>
+        )}
+        {data.newAvailable > 0 && (
+          <Button variant={allDone ? "contained" : "outlined"} size="large"
+            startIcon={<AutoStoriesIcon />} onClick={() => router.push("/learn")}>
+            Learn new ({data.newAvailable} available)
+          </Button>
+        )}
+        {allDone && data.newAvailable === 0 && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "success.main" }}>
+            <CheckCircleIcon />
+            <Typography fontWeight={600}>All done — come back tomorrow!</Typography>
+          </Box>
+        )}
+      </Stack>
+
+      {/* Queue breakdown chips */}
+      {(data.dueReview > 0 || data.learningDue > 0) && (
+        <Stack direction="row" gap={1} mb={4} flexWrap="wrap">
+          {data.dueReview > 0 && <Chip size="small" label={`${data.dueReview} review`} color="primary" variant="outlined" />}
+          {data.learningDue > 0 && <Chip size="small" label={`${data.learningDue} learning`} color="warning" variant="outlined" />}
+        </Stack>
       )}
 
       {/* Stats row */}

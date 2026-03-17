@@ -34,7 +34,8 @@ interface ClientWord {
   jlptLevel: number | null; tags: string[]; createdAt: number; updatedAt: number;
 }
 interface ClientDeck {
-  id: string; name: string; color: string; createdAt: number; updatedAt: number;
+  id: string; name: string; color: string; dailyNewCardLimit?: number | null;
+  createdAt: number; updatedAt: number;
 }
 interface ClientLog {
   id: string; cardId: string; wordId: string; rating: number;
@@ -79,13 +80,17 @@ export async function mergeClientChanges(changes: ClientChanges, lastSyncAt: num
       if (!byName.length) {
         await db.insert(decks).values({
           id: d.id, name: d.name, color: d.color,
+          dailyNewCardLimit: d.dailyNewCardLimit ?? null,
           createdAt: new Date(d.createdAt), updatedAt: new Date(d.updatedAt),
         });
       }
       // else: server already has a deck with this name — skip, client will be told to use server's id
     } else if (new Date(d.updatedAt) > byId[0].updatedAt!) {
-      await db.update(decks).set({ name: d.name, color: d.color, updatedAt: new Date(d.updatedAt) })
-        .where(eq(decks.id, d.id));
+      await db.update(decks).set({
+        name: d.name, color: d.color,
+        dailyNewCardLimit: d.dailyNewCardLimit ?? null,
+        updatedAt: new Date(d.updatedAt),
+      }).where(eq(decks.id, d.id));
     }
   }
 
@@ -167,16 +172,13 @@ export async function getServerChangesSince(lastSyncAt: number | null) {
     db.select().from(words).where(gt(words.updatedAt, since)),
     db.select().from(decks).where(gt(decks.updatedAt, since)),
     db.select({ id: decks.id }).from(decks),
-    // word_decks have no updatedAt — send all if first sync, else skip (client gets them via word upserts)
-    lastSyncAt === null
-      ? db.select().from(wordDecks)
-      : Promise.resolve([]),
+    // word_decks have no updatedAt — always send all (idempotent, additive)
+    db.select().from(wordDecks),
     db.select().from(srsCards).where(gt(srsCards.updatedAt, since)),
     db.select().from(reviewLogs).where(gt(reviewLogs.reviewedAt, since)),
     db.select().from(sentences).where(gt(sentences.createdAt, since)),
-    lastSyncAt === null
-      ? db.select().from(sentenceWords)
-      : Promise.resolve([]),
+    // sentence_words have no updatedAt — always send all (idempotent, additive)
+    db.select().from(sentenceWords),
   ]);
 
   // Normalize dates to Unix ms for JSON (Dexie uses number timestamps)

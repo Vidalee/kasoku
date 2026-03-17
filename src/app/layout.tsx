@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { AppThemeProvider } from "@/lib/ThemeContext";
 import { AppShell } from "@/components/AppShell";
 import { getSession } from "@/lib/auth";
@@ -27,9 +28,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppThemeProvider>
-          {session ? <AppShell>{children}</AppShell> : children}
-        </AppThemeProvider>
+        <AppRouterCacheProvider>
+          <AppThemeProvider>
+            {session ? <AppShell>{children}</AppShell> : children}
+          </AppThemeProvider>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );

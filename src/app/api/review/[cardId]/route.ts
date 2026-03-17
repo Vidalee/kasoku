@@ -9,7 +9,7 @@ export async function POST(
   { params }: { params: Promise<{ cardId: string }> }
 ) {
   const { cardId } = await params;
-  const { rating } = (await req.json()) as { rating: RatingLabel };
+  const { rating, logId } = (await req.json()) as { rating: RatingLabel; logId?: string };
 
   const [row] = await db.select().from(srsCards).where(eq(srsCards.id, cardId));
   if (!row) return NextResponse.json({ error: "Card not found" }, { status: 404 });
@@ -23,13 +23,15 @@ export async function POST(
     .set({ ...updated, updatedAt: new Date() })
     .where(eq(srsCards.id, cardId));
 
+  // Use client-provided logId if given — sync will send the same id and be deduped
   await db.insert(reviewLogs).values({
+    id: logId ?? crypto.randomUUID(),
     cardId,
     wordId: row.wordId,
     rating: log.rating,
     reviewedAt: log.review,
     elapsedDays: log.elapsed_days,
-  });
+  }).onConflictDoNothing();
 
   return NextResponse.json({ card: next });
 }

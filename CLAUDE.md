@@ -57,6 +57,7 @@ src/
       import/anki/preview/  # POST — preview notes for selected decks
       import/anki/confirm/  # POST — import words + SRS cards + sentences
     login/                # login page (no auth required)
+    learn/                # brute-force word introduction session (Dexie-first)
     vocabulary/           # browse + add words; click card → detail dialog with linked sentences
     review/               # FSRS flashcard session (Dexie-first, offline-capable)
     analyze/              # paste text → kuromoji tokenize → add words
@@ -76,6 +77,7 @@ src/
     auth.ts               # JWT helpers
     fsrs.ts               # FSRS wrapper around ts-fsrs
     localDb.ts            # Dexie (IndexedDB) client-side offline DB
+    reviewQueue.ts        # queue-building utilities for learn + review sessions
     syncEngine.ts         # client-side sync orchestrator
     sync-merge.ts         # server-side merge logic
     useSync.ts            # React hook: auto-sync on mount + interval
@@ -91,7 +93,7 @@ scripts/
 
 ## Database schema (summary)
 - `words` — kanji, furigana, meaning, jlpt_level, tags (JSON array)
-- `decks` — name, color
+- `decks` — name, color, daily_new_card_limit (nullable — null means unlimited)
 - `word_decks` — word ↔ deck many-to-many
 - `srs_cards` — one per (word, direction); direction 0=kanji→meaning, 1=meaning→kana; FSRS fields
 - `review_logs` — append-only; one row per review; source of truth for SRS state
@@ -101,11 +103,12 @@ scripts/
 ## Sync architecture
 - **Review logs are append-only** — SRS card state is recomputed by replaying logs in order (FSRS)
 - **words/decks**: last-write-wins by `updatedAt`
-- **wordDecks, sentenceWords**: additive/idempotent (`onConflictDoNothing`)
+- **wordDecks, sentenceWords**: always sent in full on every sync (no updatedAt — idempotent)
 - **srsCards**: server-authoritative; recomputed from logs after each sync
 - **deck deletions**: sync response includes `allDeckIds`; client prunes any local deck not in that list
 - Client uses `_synced: 0/1` flag in Dexie to track unsynced records
 - `deviceId` in review logs for per-device attribution
+- Fire-and-forget `POST /api/review/[cardId]` uses the same `logId` as the Dexie log — server uses `onConflictDoNothing` so sync never double-counts
 
 ## Auth
 - Password stored as bcrypt hash in env var `AUTH_PASSWORD_HASH`

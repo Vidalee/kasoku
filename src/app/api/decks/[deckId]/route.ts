@@ -4,8 +4,8 @@ import { eq } from "drizzle-orm";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ deckId: string }> }) {
   const { deckId } = await params;
-  const { name, color } = await req.json();
-  const [deck] = await db.update(decks).set({ name, color, updatedAt: new Date() }).where(eq(decks.id, deckId)).returning();
+  const { name, color, dailyNewCardLimit } = await req.json();
+  const [deck] = await db.update(decks).set({ name, color, dailyNewCardLimit: dailyNewCardLimit ?? null, updatedAt: new Date() }).where(eq(decks.id, deckId)).returning();
   return NextResponse.json({ deck });
 }
 

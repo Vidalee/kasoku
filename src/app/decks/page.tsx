@@ -13,7 +13,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const PRESET_COLORS = ["#6750A4","#B3261E","#006A6B","#1a6b3c","#B45309","#1565C0","#6D3A9C","#2E7D32"];
 
-interface Deck { id: string; name: string; color: string; wordCount: number; }
+interface Deck { id: string; name: string; color: string; wordCount: number; dailyNewCardLimit: number | null; }
 
 export default function DecksPage() {
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -63,6 +63,7 @@ export default function DecksPage() {
               </Stack>
               <Typography variant="body2" color="text.secondary" mt={1}>
                 {deck.wordCount} word{deck.wordCount !== 1 ? "s" : ""}
+                {deck.dailyNewCardLimit != null && ` · ${deck.dailyNewCardLimit} new/day`}
               </Typography>
             </CardContent>
           </Card>
@@ -87,19 +88,23 @@ export default function DecksPage() {
 function DeckDialog({ open, deck, onClose, onSaved }: { open: boolean; deck: Deck | null; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [dailyLimit, setDailyLimit] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setName(deck?.name ?? "");
     setColor(deck?.color ?? PRESET_COLORS[0]);
+    setDailyLimit(deck?.dailyNewCardLimit != null ? String(deck.dailyNewCardLimit) : "");
   }, [deck, open]);
 
   async function handleSave() {
     setSaving(true);
     if (deck) {
-      await fetch(`/api/decks/${deck.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, color }) });
+      const limit = dailyLimit.trim() !== "" ? parseInt(dailyLimit, 10) : null;
+      await fetch(`/api/decks/${deck.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, color, dailyNewCardLimit: limit }) });
     } else {
-      await fetch("/api/decks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, color }) });
+      const limit = dailyLimit.trim() !== "" ? parseInt(dailyLimit, 10) : null;
+      await fetch("/api/decks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, color, dailyNewCardLimit: limit }) });
     }
     setSaving(false);
     onSaved();
@@ -116,6 +121,14 @@ function DeckDialog({ open, deck, onClose, onSaved }: { open: boolean; deck: Dec
         <Stack gap={2}>
           <TextField autoFocus label="Deck name" value={name} onChange={(e) => setName(e.target.value)} fullWidth
             onKeyDown={(e) => e.key === "Enter" && name.trim() && handleSave()} />
+          <TextField
+            label="Daily new card limit"
+            helperText="Leave blank for unlimited"
+            value={dailyLimit}
+            onChange={(e) => setDailyLimit(e.target.value.replace(/\D/g, ""))}
+            fullWidth
+            inputProps={{ inputMode: "numeric" }}
+          />
           <Box>
             <Typography variant="caption" color="text.secondary" gutterBottom display="block">Color</Typography>
             <Stack direction="row" gap={1} flexWrap="wrap">

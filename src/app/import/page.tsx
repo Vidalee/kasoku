@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box, Typography, Button, TextField, Stack, Card, CardContent, Stepper, Step, StepLabel,
   FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel,
@@ -114,6 +114,11 @@ export default function ImportPage() {
   function toggleDeck(id: string) {
     setSelectedDeckIds((ids) => ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
   }
+
+  useEffect(() => {
+    if (analysis && step === 1 && selectedDeckIds.length > 0) refreshPreview();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDeckIds]);
 
   const totalSelected = analysis?.decks
     .filter((d) => selectedDeckIds.includes(d.id))
@@ -281,12 +286,9 @@ export default function ImportPage() {
           {analysis.preview.length > 0 && (
             <Card variant="outlined">
               <CardContent>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-                  <Typography variant="subtitle1" fontWeight={600}>Preview</Typography>
-                  <Button size="small" onClick={refreshPreview} disabled={previewLoading || !selectedDeckIds.length}>
-                    {previewLoading ? "Refreshing…" : "Refresh from selected decks"}
-                  </Button>
-                </Stack>
+                <Typography variant="subtitle1" fontWeight={600} mb={1}>
+                  Preview{previewLoading ? " (refreshing…)" : ""}
+                </Typography>
                 <Paper variant="outlined" sx={{ overflow: "auto" }}>
                   <Table size="small">
                     <TableHead>

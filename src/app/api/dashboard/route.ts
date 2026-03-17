@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
 import { db, words, reviewLogs, srsCards } from "@/db";
-import { sql, lte, gte } from "drizzle-orm";
+import { sql, lte, gte, eq, or } from "drizzle-orm";
 
 export async function GET() {
   const now = new Date();
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
 
-  const [dueRes, totalRes, todayRes, streakRes] = await Promise.all([
-    db.select({ count: sql<number>`cast(count(*) as integer)` }).from(srsCards).where(lte(srsCards.dueDate, now)),
+  const [dueRes, learningRes, newRes, totalRes, todayRes, streakRes] = await Promise.all([
+    // Due review cards (state=2, due now)
+    db.select({ count: sql<number>`cast(count(*) as integer)` }).from(srsCards)
+      .where(sql`${srsCards.state} = 2 and ${srsCards.dueDate} <= ${now}`),
+    // Learning/relearning cards due now (state=1 or 3)
+    db.select({ count: sql<number>`cast(count(*) as integer)` }).from(srsCards)
+      .where(sql`(${srsCards.state} = 1 or ${srsCards.state} = 3) and ${srsCards.dueDate} <= ${now}`),
+    // New cards available (state=0, direction=0)
+    db.select({ count: sql<number>`cast(count(*) as integer)` }).from(srsCards)
+      .where(sql`${srsCards.state} = 0 and ${srsCards.direction} = 0`),
     db.select({ count: sql<number>`cast(count(distinct ${words.id}) as integer)` }).from(words),
     db.select({ count: sql<number>`cast(count(*) as integer)` }).from(reviewLogs).where(gte(reviewLogs.reviewedAt, todayStart)),
     db
@@ -19,9 +27,13 @@ export async function GET() {
   ]);
 
   const streak = calcStreak(streakRes.map((r) => r.date));
+  const dueCount = (dueRes[0]?.count ?? 0) + (learningRes[0]?.count ?? 0);
 
   return NextResponse.json({
-    dueCount: dueRes[0]?.count ?? 0,
+    dueCount,
+    dueReview: dueRes[0]?.count ?? 0,
+    learningDue: learningRes[0]?.count ?? 0,
+    newAvailable: newRes[0]?.count ?? 0,
     totalWords: totalRes[0]?.count ?? 0,
     todayReviews: todayRes[0]?.count ?? 0,
     streak,

@@ -23,6 +23,7 @@ import {
 import MenuIcon from "@mui/icons-material/Menu";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import StyleIcon from "@mui/icons-material/Style";
+import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import SearchIcon from "@mui/icons-material/Search";
@@ -41,6 +42,7 @@ const DRAWER_COLLAPSED = 64;
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/", icon: <DashboardIcon /> },
+  { label: "Learn", href: "/learn", icon: <AutoStoriesIcon /> },
   { label: "Review", href: "/review", icon: <StyleIcon /> },
   { label: "Vocabulary", href: "/vocabulary", icon: <LibraryBooksIcon /> },
   { label: "Sentences", href: "/sentences", icon: <FormatListBulletedIcon /> },

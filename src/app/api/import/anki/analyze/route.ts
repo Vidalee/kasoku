@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import StreamZip from "node-stream-zip";
 import { createClient } from "@libsql/client";
-import { createWriteStream, mkdirSync, existsSync, rmSync, statSync } from "fs";
+import { createWriteStream, mkdirSync, existsSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import path from "path";
 
@@ -53,8 +53,6 @@ export async function POST(req: NextRequest) {
         abort(err: unknown) { fileStream.destroy(err instanceof Error ? err : new Error(String(err))); },
       }));
 
-      const { size } = statSync(apkgPath);
-      console.log(`[import] upload written: ${size} bytes`);
       return await analyzeFile(apkgPath, sessionId, tempDir);
     }
   } catch (err) {

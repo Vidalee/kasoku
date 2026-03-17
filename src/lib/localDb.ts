@@ -25,6 +25,7 @@ export interface LDeck {
   id: string;
   name: string;
   color: string;
+  dailyNewCardLimit: number | null;
   createdAt: number;
   updatedAt: number;
   _synced: number;
