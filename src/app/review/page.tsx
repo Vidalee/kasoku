@@ -238,14 +238,21 @@ export default function ReviewPage() {
 
   const isProduction = item.card.direction === 1;
   const isLearning   = item.card.state === 1 || item.card.state === 3;
-  const total        = queue.length;
+
+  const newCount      = queue.filter((i) => i.card.state === 0).length;
+  const learningCount = queue.filter((i) => i.card.state === 1 || i.card.state === 3).length;
+  const dueCount      = queue.filter((i) => i.card.state === 2).length;
 
   return (
     <Box sx={{ maxWidth: 560, mx: "auto" }}>
       <Stack direction="row" alignItems="center" gap={2} mb={2}>
         <LinearProgress variant="determinate" value={initialTotal > 0 ? Math.min(100, (reviewedCount / initialTotal) * 100) : 0}
           sx={{ flex: 1, height: 6, borderRadius: 3 }} />
-        <Typography variant="caption" color="text.secondary">{total} left</Typography>
+        <Stack direction="row" gap={1.5}>
+          <Typography variant="caption" fontWeight={700} color="info.main">{newCount}</Typography>
+          <Typography variant="caption" fontWeight={700} color="error.main">{learningCount}</Typography>
+          <Typography variant="caption" fontWeight={700} color="success.main">{dueCount}</Typography>
+        </Stack>
       </Stack>
 
       <Stack direction="row" gap={1} mb={2}>
