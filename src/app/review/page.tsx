@@ -32,7 +32,7 @@ export default function ReviewPage() {
   const [decks, setDecks]           = useState<LDeck[]>([]);
   const [selectedDeck, setSelectedDeck] = useState<string>("");
   const [counts, setCounts]         = useState<DeckCardCounts | null>(null);
-  const [reviewedCount, setReviewedCount] = useState(0);
+  const [clearedCount, setClearedCount] = useState(0);
   const [initialTotal, setInitialTotal]   = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -48,7 +48,7 @@ export default function ReviewPage() {
 
   const startReview = useCallback(async () => {
     setLoading(true); setDone(false); setCurrent(0); setFlipped(false);
-    setKanaInput(""); setChecked(false); setCorrect(null); setReviewedCount(0); setInitialTotal(0);
+    setKanaInput(""); setChecked(false); setCorrect(null); setClearedCount(0); setInitialTotal(0);
 
     const items = await buildReviewQueue(selectedDeck || null);
     setQueue(items);
@@ -124,8 +124,6 @@ export default function ReviewPage() {
       }).catch(() => {});
     }
 
-    setReviewedCount((n) => n + 1);
-
     // Unlock direction 1 (production) on first pass of direction 0 (recognition)
     if (pass && item.card.direction === 0) {
       unlockProductionCard(item.word.id, getDeviceId).then((result) => {
@@ -144,6 +142,8 @@ export default function ReviewPage() {
     const shouldRequeue =
       (next.state === 1 || next.state === 3) &&
       newDueDate <= now + REQUEUE_WINDOW_MS;
+
+    if (!shouldRequeue) setClearedCount((n) => n + 1);
 
     setQueue((prev) => {
       const rest = prev.slice(current + 1);
@@ -223,9 +223,9 @@ export default function ReviewPage() {
       <CheckCircleIcon sx={{ fontSize: 64, color: "success.main", mb: 2 }} />
       <Typography variant="h5" fontWeight={700} gutterBottom>All done!</Typography>
       <Typography color="text.secondary" mb={4}>
-        {reviewedCount === 0
+        {clearedCount === 0
           ? "No cards due right now."
-          : `You reviewed ${reviewedCount} card${reviewedCount !== 1 ? "s" : ""}.`}
+          : `You reviewed ${clearedCount} card${clearedCount !== 1 ? "s" : ""}.`}
       </Typography>
       <Stack direction="row" gap={2} justifyContent="center">
         <Button variant="outlined" onClick={() => { setStarted(false); setDone(false); }}>Change settings</Button>
@@ -246,7 +246,7 @@ export default function ReviewPage() {
   return (
     <Box sx={{ maxWidth: 560, mx: "auto" }}>
       <Stack direction="row" alignItems="center" gap={2} mb={2}>
-        <LinearProgress variant="determinate" value={initialTotal > 0 ? Math.min(100, (reviewedCount / initialTotal) * 100) : 0}
+        <LinearProgress variant="determinate" value={initialTotal > 0 ? Math.min(100, (clearedCount / initialTotal) * 100) : 0}
           sx={{ flex: 1, height: 6, borderRadius: 3 }} />
         <Stack direction="row" gap={1.5}>
           <Typography variant="caption" fontWeight={700} color="info.main">{newCount}</Typography>
@@ -268,47 +268,16 @@ export default function ReviewPage() {
           {/* Direction 0 — recognition */}
           {!isProduction && (
             <Box>
-              {item.sentence ? (
-                // Sentence-forward: show sentence with target word bolded
-                <Box>
-                  <Typography variant="body1" lang="ja" mb={2} lineHeight={2}>
-                    {item.sentence.japanese.split(item.word.kanji).flatMap((part, i, arr) =>
-                      i < arr.length - 1
-                        ? [part, <Typography key={i} component="span" fontWeight={700} lang="ja">{item.word.kanji}</Typography>]
-                        : [part]
-                    )}
-                  </Typography>
-                  {!flipped ? (
-                    <Typography textAlign="center" color="text.secondary" variant="body2" mt={2}>
-                      Tap to reveal · Space
-                    </Typography>
-                  ) : (
-                    <Fade in><Box>
-                      <Typography variant="body1" color="text.secondary" lang="ja" mb={0.5}>{item.word.furigana}</Typography>
-                      <Typography variant="h5" fontWeight={600}>{item.word.meaning}</Typography>
-                      {item.sentence.english && (
-                        <Typography variant="body2" color="text.secondary" mt={1} fontStyle="italic">
-                          {item.sentence.english}
-                        </Typography>
-                      )}
-                    </Box></Fade>
-                  )}
-                </Box>
+              <Typography variant="h2" fontWeight={700} lang="ja" textAlign="center" mb={1}>{item.word.kanji}</Typography>
+              {flipped ? (
+                <Fade in><Box textAlign="center">
+                  <Typography variant="body1" color="text.secondary" lang="ja" mb={1}>{item.word.furigana}</Typography>
+                  <Typography variant="h5">{item.word.meaning}</Typography>
+                </Box></Fade>
               ) : (
-                // Word-forward fallback: no sentence
-                <Box>
-                  <Typography variant="h2" fontWeight={700} lang="ja" textAlign="center" mb={1}>{item.word.kanji}</Typography>
-                  {flipped ? (
-                    <Fade in><Box textAlign="center">
-                      <Typography variant="body1" color="text.secondary" lang="ja" mb={1}>{item.word.furigana}</Typography>
-                      <Typography variant="h5">{item.word.meaning}</Typography>
-                    </Box></Fade>
-                  ) : (
-                    <Typography textAlign="center" color="text.secondary" variant="body2" mt={2}>
-                      Tap to reveal · Space
-                    </Typography>
-                  )}
-                </Box>
+                <Typography textAlign="center" color="text.secondary" variant="body2" mt={2}>
+                  Tap to reveal · Space
+                </Typography>
               )}
             </Box>
           )}
